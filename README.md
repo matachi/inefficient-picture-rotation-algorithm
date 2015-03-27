@@ -40,7 +40,7 @@ Created the GIF images with GIMP.
 3. Done. In the project's root directory you can now find a sequence of 10
    images which are gradually rotated using a recursive algorithm.
 
-Run the alternative algorithm by changing in [src/main.rst](src/main.rst):
+Run the alternative algorithm by changing in [src/main.rs](src/main.rs):
 
     let alt_algorithm = false;
 
