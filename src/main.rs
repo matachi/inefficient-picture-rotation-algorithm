@@ -5,6 +5,8 @@ use bmp::Image;
 use std::num::Int;
 
 fn main() {
+  let alt_algorithm = false;
+
   // 0 to 8
   for i in (0..9) {
     // Print the current step
@@ -15,20 +17,25 @@ fn main() {
       panic!("Failed to open: {}", e);
     });
 
-    // Rotate the image. Second argument will start from beind with 1, 2, 4, 8,
-    // up to 256, where 1 provides the finest detail is the best finished
-    // rotation, and 256 is just 1 blit level.
-    let img_rotated = rotate(img, 2.pow(i));
+    let img_rotated = if !alt_algorithm {
+      // Rotate the image. Second argument will start from beind with 1, 2, 4,
+      // 8, up to 256, where 1 provides the finest detail is the best finished
+      // rotation, and 256 is just 1 blit level.
+      rotate(img, 512, 2.pow(i))
+    } else {
+      rotate(img, 2.pow(i + 1), 1)
+    };
 
     // Save the image
-    let id = 10 - i;
+    let id = if !alt_algorithm { 10 - i } else { i + 2 };
     let name = format!("img{}.bmp", id);
     let _ = img_rotated.save(&name);
   }
 }
 
-fn rotate(img: Image, stop_at: u32) -> Image {
-  if img.get_width() == stop_at {
+fn rotate(img: Image, begin_at: u32, stop_at: u32) -> Image {
+  let width = img.get_width();
+  if width == stop_at {
     return img;
   }
 
@@ -37,15 +44,22 @@ fn rotate(img: Image, stop_at: u32) -> Image {
   //  img3  |  img4
   let (img1, img2, img3, img4) = split(img);
 
-  let img1_rotated = rotate(img1, stop_at);
-  let img2_rotated = rotate(img2, stop_at);
-  let img3_rotated = rotate(img3, stop_at);
-  let img4_rotated = rotate(img4, stop_at);
+  let img1_rotated = rotate(img1, begin_at, stop_at);
+  let img2_rotated = rotate(img2, begin_at, stop_at);
+  let img3_rotated = rotate(img3, begin_at, stop_at);
+  let img4_rotated = rotate(img4, begin_at, stop_at);
 
-  //  img3  |  img1
-  //  -------------
-  //  img4  |  img2
-  combine(img3_rotated, img1_rotated, img4_rotated, img2_rotated)
+  if width <= begin_at {
+    //  img3  |  img1
+    //  -------------
+    //  img4  |  img2
+    combine(img3_rotated, img1_rotated, img4_rotated, img2_rotated)
+  } else {
+    //  img1  |  img2
+    //  -------------
+    //  img3  |  img4
+    combine(img1_rotated, img2_rotated, img3_rotated, img4_rotated)
+  }
 }
 
 fn split(img: Image) -> (Image, Image, Image, Image) {
